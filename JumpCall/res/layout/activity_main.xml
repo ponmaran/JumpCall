@@ -1,0 +1,56 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/base_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_color"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/instruction_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:text="@string/config_page_message" />
+
+    <RelativeLayout
+        android:id="@+id/field_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/instruction_text" >
+
+	</RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/button_group"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/field_parent"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/add_new_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="pressAdd"
+            android:text="@string/button_new_row_label" />
+
+        <Button
+            android:id="@+id/done_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="editDone"
+            android:text="@string/button_done_label" />
+
+        <Button
+            android:id="@+id/reset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="pressReset"
+            android:text="@string/button_reset_label" />
+
+    </LinearLayout>
+
+</RelativeLayout>
