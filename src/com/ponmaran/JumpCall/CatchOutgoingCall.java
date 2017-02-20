@@ -4,13 +4,22 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.PhoneLookup;
+import android.telephony.PhoneNumberUtils;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.widget.Toast;
 
 public class CatchOutgoingCall extends BroadcastReceiver {
-//	private static final String TAG = "onReceive";
+	private static final String TAG_BRD_REC = "BroadcastReceiver";
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		Log.v(TAG_BRD_REC, "New Outgoing Call");
 //		Log.v(TAG, "phone number: " + intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER));
 //		Log.v(TAG, "Action : " + intent. getAction ());
 		Bundle extData = intent.getExtras();
@@ -18,25 +27,23 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 			Log.v(TAG, "Extras : " + extData.toString());			
 		}
 */
-		String orgNum = new String();
-        String numSeq = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
-//		System.out.println("Number in" + numSeq);
+		String orgNum = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
+//		System.out.println("Number in" + orgNum);
 
 //		Phone number type identification
 		boolean numChangeFlag = false;
-        if (numSeq.substring(0, 2).equals("+1")){
+		
+		String numSeq = new String();
+		if (orgNum.substring(0, 2).equals("+1")){
     	}
-    	else if ( numSeq.substring(0,3).equals("011")){
+    	else if ( orgNum.substring(0,3).equals("011")){
 //			System.out.println(dialedNumber + " is non US with 011");
-    		orgNum = numSeq;
-    		numSeq = nonUsNumSeqBuild(context, numSeq);
+    		numSeq = nonUsNumSeqBuild(context, orgNum);
     		numChangeFlag = true;
     	}
-    	else if (numSeq.substring(0,1).equals("+")){
+    	else if (orgNum.substring(0,1).equals("+")){
 //			System.out.println(dialedNumber + " is non US with +");
-    		orgNum = numSeq;
-    		numSeq ="011" + numSeq.substring(1);
-    		numSeq = nonUsNumSeqBuild(context, numSeq);
+    		numSeq = nonUsNumSeqBuild(context, "011" + orgNum.substring(1));
     		numChangeFlag = true;
     	};
 
@@ -46,7 +53,10 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 //    		System.out.println("Calling listener");
 //    		System.out.println(MainActivity.EXT_ORG_NUM);
 //    		System.out.println(MainActivity.EXT_BUILT_NUM_SEQ);
-        	Intent listenerIntent = new Intent(context, CallWatchActivity.class);
+        	Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(orgNum));
+        	Cursor contactSetCursor = context.getContentResolver().query(uri, new String[] {PhoneLookup.DISPLAY_NAME, PhoneLookup.LABEL, PhoneLookup.TYPE}, null, null, null);
+        	
+/*        	Intent listenerIntent = new Intent(context, CallWatchActivity.class);
 
         	listenerIntent.putExtra(MainActivity.EXT_ORG_NUM,orgNum);
         	listenerIntent.putExtra(MainActivity.EXT_BUILT_NUM_SEQ, numSeq);
@@ -55,12 +65,39 @@ public class CatchOutgoingCall extends BroadcastReceiver {
         	listenerIntent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
 
         	context.startActivity(listenerIntent);
-
+*/
+            if(((TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE)).getCallState() != TelephonyManager.CALL_STATE_OFFHOOK){
+            	context.startService(new Intent(context, CallLogWatchService.class));
+            }
+//			else{
+//            	System.out.println("Call in progress. Not starting listener");
+//			}
+    		
     		extData.putString("android.phone.extra.ORIGINAL_URI", "tel:" + numSeq);
     		extData.putString("android.phone.extra.PHONE_NUMBER", numSeq);
     		intent.putExtras(extData);
 
             this.setResultData(numSeq);
+//			context.getContentResolver().query(android.provider.Contacts.CONTENT_URI, android.provider.ContactsContract.Contacts., selection, selectionArgs, sortOrder)
+
+            MainActivity.BRIDGE_PAIRS = MainActivity.BRIDGE_PAIRS + "~" + orgNum + "~" + PhoneNumberUtils.extractNetworkPortion(numSeq);
+        	
+        	String contactName = new String();
+        	String contactLabel = new String();
+        	String contactType = new String();
+        	if(contactSetCursor != null && contactSetCursor.moveToFirst()){
+        		contactName = contactSetCursor.getString(contactSetCursor.getColumnIndex(PhoneLookup.DISPLAY_NAME));
+        		contactLabel = contactSetCursor.getString(contactSetCursor.getColumnIndex(PhoneLookup.LABEL));
+        		contactType = (String) Phone.getTypeLabel(context.getResources(), contactSetCursor.getInt(contactSetCursor.getColumnIndex(PhoneLookup.TYPE)), (CharSequence)"OTHER");
+        	}
+
+//    		Log.v(TAG_BRD_REC, "Contact: \'" + contactName +  "\' \'" + contactLabel + "\' \'" + contactType + "\'");
+
+        	Toast.makeText(context, "Calling\n" + 
+        							 (contactName.length() > 0 && contactType.length() > 0 ?
+        									 contactName + " " + (contactType == "OTHER" && contactLabel != null ? contactLabel : contactType) + " "
+											 :"") +
+        			                 orgNum + "\nusing JumpCall", Toast.LENGTH_LONG).show();
 //    		System.out.println("Number out: " + this.getResultData());
 //    		System.out.println("Number in: " + intent.getExtras().toString());
 		}
