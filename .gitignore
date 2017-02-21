@@ -1,4 +1,14 @@
-/gen/
-/bin/
-/libs/
-/.idea/
+#Android
+gen/
+
+# Old Android
+bin/
+
+#IDEA
+*.iml
+.idea/
+out/
+
+# Eclipse
+.project
+.classpath
