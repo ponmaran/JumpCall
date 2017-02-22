@@ -36,12 +36,5 @@
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
             </intent-filter>
         </receiver>
-
-        <activity
-            android:name=".CallWatchActivity">
-		</activity>
-		<service
-		    android:name=".CallLogWatchService">
-		</service>
     </application>
 </manifest>
