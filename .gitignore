@@ -1,13 +1,17 @@
 #Android
 gen/
+build/
+local.properties
 
 # Old Android
 bin/
 
 #IDEA
+*.iws
 *.iml
-.idea/
-out/
+*.ipr
+.idea/*
+.gradle/
 
 # Eclipse
 .project
