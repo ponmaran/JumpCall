@@ -1,8 +1,10 @@
 package com.ponmaran.JumpCall;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +14,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +27,7 @@ public class MainActivity extends Activity {
     private final String TAG = "MainActivity";
     static final String SHARED_PREF_NAME = "BRIDGE_DATA";
     static final String SHARED_PREF_KEY_BRIDGES = "BRIDGE";
+    static final String SHARED_PREF_KEY_RECEIVER_STATE = "RECEIVER_STATE";
 
     private SharedPreferences sharedPref;
 
@@ -39,7 +43,14 @@ public class MainActivity extends Activity {
         ImageButton buttonPlus = (ImageButton) findViewById(R.id.buttonAddRow);
         buttonPlus.setOnClickListener(listener);
 
+        Switch aSwitch = (Switch) findViewById(R.id.switchReceiverOnOff);
+        aSwitch.setOnClickListener(listener);
+
         sharedPref = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
+
+        boolean receiverState = getSavedReceiverState();
+        setReceiverState(receiverState);
+        aSwitch.setChecked(receiverState);
 
         String[][] set = getSavedBridgeData();
         for (String[] aSet : set) {
@@ -60,16 +71,31 @@ public class MainActivity extends Activity {
                     LinearLayout v = (LinearLayout) view.getParent();
                     fieldParent.removeView(v);
                     break;
+                case R.id.switchReceiverOnOff:
+                    Switch aSwitch = (Switch) view;
+                    boolean checked = aSwitch.isChecked();
+                    setReceiverState(checked);
+                    saveReceiverState(checked);
+                    Toast.makeText(
+                            getApplicationContext(),
+                            "AltRoute " + (
+                                    checked?
+                                            "Enabled" :
+                                            "Disabled"),
+                            Toast.LENGTH_LONG)
+                            .show();
             }
         }
     };
 
     @Override public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG, "onCreateOptionsMenu");
         getMenuInflater().inflate(R.menu.activity_main, menu);
         return true;
     }
 
     @Override public boolean onOptionsItemSelected(MenuItem item){
+        Log.d(TAG, "onOptionsItemSelected");
         switch (item.getItemId()) {
             case R.id.menu_save:
                 saveBridgeData(captureBridgeDataFromView());
@@ -102,6 +128,18 @@ public class MainActivity extends Activity {
                 }
         }
         super.onBackPressed();
+    }
+
+    private void setReceiverState(boolean checked) {
+        Log.d(TAG, "Receiver ON/OFF");
+        ComponentName componentName = new ComponentName(MainActivity.this,CatchOutgoingCall.class);
+        getPackageManager()
+                .setComponentEnabledSetting(
+                        componentName,
+                        checked ?
+                                PackageManager.COMPONENT_ENABLED_STATE_ENABLED :
+                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP);
     }
 
     public String[][] captureBridgeDataFromView() {
@@ -154,6 +192,11 @@ public class MainActivity extends Activity {
         delayBox.setText(delay);
     }
 
+    private boolean getSavedReceiverState() {
+        Log.d(TAG,"Read Receiver state");
+        return sharedPref.getBoolean(SHARED_PREF_KEY_RECEIVER_STATE, false);
+    }
+
     private String[][] getSavedBridgeData(){
         Log.d(TAG, "Read saved data");
         String a = sharedPref.getString(SHARED_PREF_KEY_BRIDGES, getString(R.string.bridge_default_value));
@@ -162,6 +205,13 @@ public class MainActivity extends Activity {
         for(int i=0;i<pairs.length;i++)
             set[i] = StringUtils.split(pairs[i],"~");
         return set;
+    }
+
+    private void saveReceiverState(boolean state) {
+        Log.d(TAG,"Write Receiver state");
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(SHARED_PREF_KEY_RECEIVER_STATE, state);
+        editor.apply();
     }
 
     private void saveBridgeData(String[][] set){
