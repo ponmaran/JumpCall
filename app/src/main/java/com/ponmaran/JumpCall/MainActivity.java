@@ -11,28 +11,40 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.Xml;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
+    private final String TAG = "MainActivity";
 
 	public final static String EXT_ORG_NUM = "com.ponmaran.JumpCall.ORG_NUM";
 	public final static String EXT_BUILT_NUM_SEQ = "com.ponmaran.JumpCall.BUILT_NUM_SEQ";
 	protected static String BRIDGE_PAIRS = new String();
 	public static AttributeSet attr_num = null, attr_delay = null;
+
+    private ScrollView baseLayout;
+
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // Get shared preferences
-        RelativeLayout baseLayout = (RelativeLayout) findViewById(R.id.base_layout);
+        baseLayout = (ScrollView) findViewById(R.id.base_layout);
+        ImageButton buttonPlus = (ImageButton) findViewById(R.id.buttonAddRow);
+        buttonPlus.setOnClickListener(listener);
+
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_prefs_file), Context.MODE_PRIVATE);
         String a = sharedPref.getString(getString(R.string.bridgeNum), getString(R.string.bridge_default_value));
         String b = sharedPref.getString(getString(R.string.delayTime), getString(R.string.delay_default_value));
@@ -117,14 +129,39 @@ public class MainActivity extends Activity {
         setContentView(baseLayout);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    private View.OnClickListener listener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Log.d(TAG, "onClick");
+            switch (view.getId()){
+                case R.id.buttonAddRow:
+                    pressAdd();
+                    break;
+            }
+        }
+    };
+
+    @Override public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_main, menu);
         return true;
     }
-    
+
+    @Override public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()) {
+            case R.id.menu_save:
+                editDone();
+                return true;
+            case R.id.menu_reset:
+                pressReset();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+    }
+
     /** Called when the user clicks the Send button */
-    public void editDone(View view) {
+    public void editDone() {
 
     	String bridgeNum = new String(),delayTime = new String();
     	for(int i=0;findViewById(100 + i) != null ; i++){
@@ -158,9 +195,8 @@ public class MainActivity extends Activity {
 	}
     
     /** Called when the user clicks the Reset button */
-    public void pressReset(View view) {
+    public void pressReset() {
 
-    	RelativeLayout baseLayout = (RelativeLayout) findViewById(R.id.base_layout);
     	RelativeLayout fieldParent = (RelativeLayout) findViewById(R.id.field_parent);
     	fieldParent.removeAllViews();
 
@@ -195,10 +231,10 @@ public class MainActivity extends Activity {
 	}
 
     /** Called when the user clicks the Call button */
-    public void pressAdd(View view) {
+    public void pressAdd() {
 
-    	RelativeLayout baseLayout = (RelativeLayout) findViewById(R.id.base_layout);
-    	RelativeLayout fieldParent = (RelativeLayout) findViewById(R.id.field_parent);
+        Log.d(TAG, "New Row");
+        RelativeLayout fieldParent = (RelativeLayout) findViewById(R.id.field_parent);
     	
     	int i;
     	for(i=0;findViewById(100 + i) != null ; i++){
