@@ -15,14 +15,18 @@ import android.telephony.PhoneNumberUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 
 public class CatchOutgoingCall extends BroadcastReceiver {
 	private static final String TAG_BRD_REC = "OutgoingCallReceiver";
+	private Context context;
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Date callBroadcastTime = new Date();
+		this.context = context;
 		Bundle extras = intent.getExtras();
 		String extrasData = "";
 		for(String key : extras.keySet()) extrasData = extrasData.concat(" " + key + ": " + extras.getString(key));
@@ -33,8 +37,8 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 //		Phone number type identification
 		String numSeq;
 		if (orgNum.substring(0, 2).equals("+1")) return;
-    	else if ( orgNum.substring(0,3).equals("011")) numSeq = numSeqBuild(context, orgNum);
-    	else if (orgNum.substring(0,1).equals("+")) numSeq = numSeqBuild(context, "011" + orgNum.substring(1));
+    	else if (orgNum.substring(0,3).equals("011")) numSeq = numSeqBuild(getSavedBridgeData(), orgNum);
+    	else if (orgNum.substring(0,1).equals("+")) numSeq = numSeqBuild(getSavedBridgeData(), "011" + orgNum.substring(1));
 		else return;
 
 		extras.putString("android.phone.extra.ORIGINAL_URI", "tel:" + numSeq);
@@ -57,47 +61,46 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 
 		contentResolver.registerContentObserver(Uri.parse("content://call_log/calls"),true,callLogObserver);
 
-		MainActivity.BRIDGE_PAIRS = MainActivity.BRIDGE_PAIRS + "~" + orgNum + "~" + PhoneNumberUtils.extractNetworkPortion(numSeq);
-
 		//Notify user by Toast
 		Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(orgNum));
 		Cursor contactSetCursor = context.getContentResolver().query(uri, new String[] {PhoneLookup.DISPLAY_NAME, PhoneLookup.LABEL, PhoneLookup.TYPE}, null, null, null);
 
-		String contactName = new String();
-		String contactLabel = new String();
-		String contactType = new String();
+		String contactName = "";
+		String contactLabel = "";
+		String contactType = "";
 		if(contactSetCursor != null && contactSetCursor.moveToFirst()){
 			contactName = contactSetCursor.getString(contactSetCursor.getColumnIndex(PhoneLookup.DISPLAY_NAME));
 			contactLabel = contactSetCursor.getString(contactSetCursor.getColumnIndex(PhoneLookup.LABEL));
 			contactType = (String) Phone.getTypeLabel(context.getResources(), contactSetCursor.getInt(contactSetCursor.getColumnIndex(PhoneLookup.TYPE)), (CharSequence)"OTHER");
+			contactSetCursor.close();
 		}
-		contactSetCursor.close();
 
 		Toast.makeText(context, "Calling\n" +
 				(contactName.length() > 0 && contactType.length() > 0 ?
-						contactName + " " + (contactType == "OTHER" && contactLabel != null ? contactLabel : contactType) + " "
+						contactName + " " + (contactType.equals("OTHER") && contactLabel != null ? contactLabel : contactType) + " "
 						:"") +
 				orgNum + "\nusing JumpCall", Toast.LENGTH_LONG).show();
 	}
 
-    private String numSeqBuild(Context context, String dialedNum){
-        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.shared_prefs_file), Context.MODE_PRIVATE);
-        String bridgeNumSeq = sharedPref.getString(context.getString(R.string.bridgeNum), context.getString(R.string.bridge_default_value));
-        String delayTimeSeq = sharedPref.getString(context.getString(R.string.delayTime), context.getString(R.string.delay_default_value));
-
-        String[] bridgeNum = bridgeNumSeq.split(":");
-        String[] delayTime = delayTimeSeq.split(":", bridgeNum.length);
-        
-        int delayTimeNum;
-        String pauses = new String();
-        String numSeq = new String();
-        for(int i = 0; i<bridgeNum.length ; i++){
-        	delayTimeNum = delayTime[i].equals("")? 0 : Integer.parseInt(delayTime[i]);
-        	pauses = "";
-            for(int j=0; j < delayTimeNum ;j += 2)
-            	pauses = pauses + ",";
-        	numSeq = numSeq + bridgeNum[i] + pauses;
-        }
+    private String numSeqBuild(String[][] set, String dialedNum){
+		String numSeq = "";
+		for (String[] aSet : set) {
+			int delayTimeNum = aSet[1].equals("") ? 0 : Integer.parseInt(aSet[1]);
+			String pauses = "";
+			for (int j = 0; j < delayTimeNum; j += 2)
+				pauses = pauses + ",";
+			numSeq = numSeq + aSet[0] + pauses;
+		}
         return numSeq + dialedNum;
-    };
+    }
+
+	private String[][] getSavedBridgeData(){
+		SharedPreferences sharedPref = context.getSharedPreferences(MainActivity.SHARED_PREF_NAME, Context.MODE_PRIVATE);
+		String a = sharedPref.getString(MainActivity.SHARED_PREF_KEY_BRIDGES, context.getString(R.string.bridge_default_value));
+		String[] pairs = StringUtils.split(a,":");
+		String[][] set = new String[pairs.length][2];
+		for(int i=0;i<pairs.length;i++)
+			set[i] = StringUtils.split(pairs[i],"~");
+		return set;
+	}
 }
