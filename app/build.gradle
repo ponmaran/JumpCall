@@ -20,4 +20,5 @@ android {
 
 dependencies {
     compile 'org.apache.commons:commons-lang3:3.5'
+    compile 'com.android.support:support-v4:25.2.0'
 }

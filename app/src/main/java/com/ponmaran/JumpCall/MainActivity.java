@@ -1,11 +1,17 @@
 package com.ponmaran.JumpCall;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -28,6 +34,8 @@ public class MainActivity extends Activity {
     static final String SHARED_PREF_NAME = "BRIDGE_DATA";
     static final String SHARED_PREF_KEY_BRIDGES = "BRIDGE";
     static final String SHARED_PREF_KEY_RECEIVER_STATE = "RECEIVER_STATE";
+    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 7;
+    private static final int MY_PERMISSIONS_REQUEST_CALL_PHONE = 14;
 
     private SharedPreferences sharedPref;
 
@@ -36,6 +44,12 @@ public class MainActivity extends Activity {
 	@Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
+        checkPermission(Manifest.permission.READ_CONTACTS,
+                getString(R.string.app_name) + " " + getString(R.string.permissionRequestMessageReadContacts) + "\n\n" + getString(R.string.permissionRequestReadContactsIfDenied),
+                MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+        checkPermission(Manifest.permission.CALL_PHONE,
+                getString(R.string.app_name) + " " + getString(R.string.permissionRequestMessageCallPhone) + "\n\n" + getString(R.string.permissionRequestCallPhoneIfDenied),
+                MY_PERMISSIONS_REQUEST_CALL_PHONE);
         setContentView(R.layout.activity_main);
 
         fieldParent = (LinearLayout) findViewById(R.id.field_parent);
@@ -53,8 +67,33 @@ public class MainActivity extends Activity {
         aSwitch.setChecked(receiverState);
 
         String[][] set = getSavedBridgeData();
-        for (String[] aSet : set) {
-            addFieldSet(aSet[0], aSet[1]);
+        if(set.length == 0) set = new String[][]{{"",""}};
+        for (String[] aSet : set)
+            addFieldSet(aSet);
+    }
+
+    private void checkPermission(final String permission, String message, final int request){
+        Log.d(TAG,"Checking Permission");
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+                new AlertDialog.Builder(this)
+                        .setMessage(message)
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, request);
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                            }
+                        })
+//                        .create()
+                        .show();
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{permission}, request);
+            }
         }
     }
 
@@ -64,7 +103,7 @@ public class MainActivity extends Activity {
             Log.d(TAG, "onClick");
             switch (view.getId()){
                 case R.id.buttonAddRow:
-                    addFieldSet("","");
+                    addFieldSet(new String[]{"",""});
                     break;
                 case R.id.buttonDeleteRow:
                     Log.d(TAG, "delete pressed");
@@ -104,7 +143,7 @@ public class MainActivity extends Activity {
             case R.id.menu_reset:
                 fieldParent.removeAllViews();
                 saveBridgeData(new String[][]{{"",""}});
-                addFieldSet("","");
+                addFieldSet(new String[]{"",""});
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -152,21 +191,20 @@ public class MainActivity extends Activity {
 
             String[] lineData = new String[2];
             lineData[0] = numBox.getText().toString();
-            if (lineData[0].length() > 0)
+            if (lineData[0].length() > 0) {
                 lineData[1] = delBox.getText().toString();
-            setList.add(i, lineData);
+                setList.add(i, lineData);
+            }
         }
 
         String[][] setArray = new String[setList.size()][2];
         for(int i=0; i<setList.size();i++)
             setArray[i] = setList.get(i);
 
-//        for(String[] a:setArray) Log.d(TAG, a[0] + " " + a[1]);
-
         return setArray;
     }
 
-    private void addFieldSet(String number, String delay){
+    private void addFieldSet(String[] aSet){
         Log.d(TAG, "Insert a line");
         LinearLayout fieldSet = (LinearLayout) LayoutInflater.from(fieldParent.getContext()).inflate(R.layout.number_delay_set,fieldParent,false);
         LinearLayout.LayoutParams setParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -188,8 +226,8 @@ public class MainActivity extends Activity {
         buttonDeleteSet.setLayoutParams(buttonParams);
         buttonDeleteSet.setOnClickListener(listener);
 
-        numberBox.setText(number);
-        delayBox.setText(delay);
+        numberBox.setText(aSet[0]);
+        delayBox.setText(aSet[1]);
     }
 
     private boolean getSavedReceiverState() {
@@ -199,7 +237,7 @@ public class MainActivity extends Activity {
 
     private String[][] getSavedBridgeData(){
         Log.d(TAG, "Read saved data");
-        String a = sharedPref.getString(SHARED_PREF_KEY_BRIDGES, getString(R.string.bridge_default_value));
+        String a = sharedPref.getString(SHARED_PREF_KEY_BRIDGES, "");
         String[] pairs = StringUtils.split(a,":");
         String[][] set = new String[pairs.length][2];
         for(int i=0;i<pairs.length;i++)

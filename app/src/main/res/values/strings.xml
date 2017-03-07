@@ -1,24 +1,18 @@
 <resources>
 
-    <string name="app_name">JumpCall</string>
+    <string name="app_name">AltRoute</string>
     <string name="edit_num_hint">Number</string>
-    <string name="button_done_label">Save</string>
     <string name="menu_save">Save</string>
-    <string name="bridgeNum">99999</string>
     <string name="edit_delay_hint">Delay</string>
-    <string name="delayTime">11111</string>
     <string name="config_page_message">Add the access and passcode numbers and delays to following those. Phone number will be dialed at last.</string>
-    <string name="shared_prefs_file">MY_SHARED_PREF</string>
-    <string name="button_reset_label">Reset</string>
-    <string name="bridge_default_value"></string>
-    <string name="delay_default_value"></string>
-    <string name="button_call_label">Call</string>
-    <string name="title_activity_call_bridge">OneTouch Pinless</string>
-    <string name="button_new_row_label">Add Number</string>
     <string name="textFieldHeaderNumber">Number to dial</string>
     <string name="textFieldHeaderDelay">Wait(Sec)</string>
     <string name="menu_reset">Reset</string>
     <string name="button_desc_add_row">Add Row Button</string>
     <string name="desc_delete_row">Delete Row</string>
+    <string name="permissionRequestMessageReadContacts"> shows Contacts info of the destination number from phone Contacts.</string>
+    <string name="permissionRequestMessageCallPhone"> places a call via configured routing number and requires permission to manage phone calls to do so.</string>
+    <string name="permissionRequestReadContactsIfDenied">If denied, routing notification will not show contact info.</string>
+    <string name="permissionRequestCallPhoneIfDenied">If denied, app will not work as intended.</string>
 
 </resources>

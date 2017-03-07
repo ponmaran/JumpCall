@@ -96,7 +96,7 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 
 	private String[][] getSavedBridgeData(){
 		SharedPreferences sharedPref = context.getSharedPreferences(MainActivity.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-		String a = sharedPref.getString(MainActivity.SHARED_PREF_KEY_BRIDGES, context.getString(R.string.bridge_default_value));
+		String a = sharedPref.getString(MainActivity.SHARED_PREF_KEY_BRIDGES, "");
 		String[] pairs = StringUtils.split(a,":");
 		String[][] set = new String[pairs.length][2];
 		for(int i=0;i<pairs.length;i++)
