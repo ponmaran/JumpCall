@@ -22,6 +22,7 @@ import java.util.Date;
 public class CatchOutgoingCall extends BroadcastReceiver {
 	private static final String TAG_BRD_REC = "OutgoingCallReceiver";
 	private Context context;
+	SharedPreferences sharedPref;
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
@@ -34,12 +35,23 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 
 		String orgNum = extras.getString(Intent.EXTRA_PHONE_NUMBER);
 
+		sharedPref = context.getSharedPreferences(MainActivity.SHARED_PREF_NAME, Context.MODE_PRIVATE);
+
 //		Phone number type identification
-		String numSeq;
-		if (orgNum.substring(0, 2).equals("+1")) return;
-    	else if (orgNum.substring(0,3).equals("011")) numSeq = numSeqBuild(getSavedBridgeData(), orgNum);
-    	else if (orgNum.substring(0,1).equals("+")) numSeq = numSeqBuild(getSavedBridgeData(), "011" + orgNum.substring(1));
-		else return;
+		String numSeq = "";
+		String[][] filterSet = getSavedFilterData();
+		for (String[] aFilterSet : filterSet) {
+			if (orgNum.startsWith(aFilterSet[0])) {
+				String number = orgNum;
+				if (!aFilterSet[1].isEmpty())
+				    number = aFilterSet[1] + number.substring(aFilterSet[0].length());
+				numSeq = numSeqBuild(getSavedBridgeData(), number);
+				break;
+			}
+		}
+
+		if(numSeq.isEmpty())
+			return;
 
 		extras.putString("android.phone.extra.ORIGINAL_URI", "tel:" + numSeq);
 		extras.putString("android.phone.extra.PHONE_NUMBER", numSeq);
@@ -82,7 +94,7 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 				orgNum + "\nusing JumpCall", Toast.LENGTH_LONG).show();
 	}
 
-    private String numSeqBuild(String[][] set, String dialedNum){
+	private String numSeqBuild(String[][] set, String dialedNum){
 		String numSeq = "";
 		for (String[] aSet : set) {
 			int delayTimeNum = aSet[1].equals("") ? 0 : Integer.parseInt(aSet[1]);
@@ -94,9 +106,19 @@ public class CatchOutgoingCall extends BroadcastReceiver {
         return numSeq + dialedNum;
     }
 
+	private String[][] getSavedFilterData() {
+		Log.d(TAG_BRD_REC, "Read saved filter data");
+		String a = sharedPref.getString(MainActivity.SHARED_PREF_KEY_FILTER_SETS, "");
+		String[] pairs = StringUtils.split(a,":");
+		String[][] set = new String[pairs.length][2];
+		for(int i=0;i<pairs.length;i++)
+			set[i] = pairs[i].split("~");
+		return set;
+	}
+
 	private String[][] getSavedBridgeData(){
-		SharedPreferences sharedPref = context.getSharedPreferences(MainActivity.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-		String a = sharedPref.getString(MainActivity.SHARED_PREF_KEY_BRIDGES, "");
+		Log.d(TAG_BRD_REC, "Read saved bridge data");
+		String a = sharedPref.getString(MainActivity.SHARED_PREF_KEY_BRIDGE_SETS, "");
 		String[] pairs = StringUtils.split(a,":");
 		String[][] set = new String[pairs.length][2];
 		for(int i=0;i<pairs.length;i++)

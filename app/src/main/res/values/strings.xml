@@ -14,5 +14,7 @@
     <string name="permissionRequestMessageCallPhone"> places a call via configured routing number and requires permission to manage phone calls to do so.</string>
     <string name="permissionRequestReadContactsIfDenied">If denied, routing notification will not show contact info.</string>
     <string name="permissionRequestCallPhoneIfDenied">If denied, app will not work as intended.</string>
+    <string name="textFilterHeaderCountryCode">Route Country Code</string>
+    <string name="textFilterHeaderConvertTo">Convert to</string>
 
 </resources>

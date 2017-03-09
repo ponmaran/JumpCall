@@ -9,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -31,8 +30,10 @@ import java.util.List;
 
 public class MainActivity extends Activity {
     private final String TAG = "MainActivity";
-    static final String SHARED_PREF_NAME = "BRIDGE_DATA";
-    static final String SHARED_PREF_KEY_BRIDGES = "BRIDGE";
+    static final String SHARED_PREF_NAME = "ROUTE_DATA";
+    static final String SHARED_PREF_KEY_BRIDGE_SETS = "BRIDGE_SETS";
+    static final String SHARED_PREF_KEY_FILTER_SETS = "FILTER_SETS";
+
     static final String SHARED_PREF_KEY_RECEIVER_STATE = "RECEIVER_STATE";
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 7;
     private static final int MY_PERMISSIONS_REQUEST_CALL_PHONE = 14;
@@ -40,6 +41,8 @@ public class MainActivity extends Activity {
     private SharedPreferences sharedPref;
 
     private LinearLayout fieldParent;
+    private LinearLayout fieldParentFilters;
+    private int buttonIdFilterLineDelete;
 
 	@Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,9 +56,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         fieldParent = (LinearLayout) findViewById(R.id.field_parent);
+        fieldParentFilters = (LinearLayout) findViewById(R.id.field_parent_filters);
+        buttonIdFilterLineDelete = ImageButton.generateViewId();
 
         ImageButton buttonPlus = (ImageButton) findViewById(R.id.buttonAddRow);
         buttonPlus.setOnClickListener(listener);
+
+        ImageButton buttonFilterPlus = (ImageButton) findViewById(R.id.buttonAddFilterRow);
+        buttonFilterPlus.setOnClickListener(listener);
 
         Switch aSwitch = (Switch) findViewById(R.id.switchReceiverOnOff);
         aSwitch.setOnClickListener(listener);
@@ -65,6 +73,11 @@ public class MainActivity extends Activity {
         boolean receiverState = getSavedReceiverState();
         setReceiverState(receiverState);
         aSwitch.setChecked(receiverState);
+
+        String[][] filter = getSavedFilterData();
+        if(filter.length == 0) filter = new String[][]{{"",""}};
+        for (String[] aSet : filter)
+            addFilterSet(aSet);
 
         String[][] set = getSavedBridgeData();
         if(set.length == 0) set = new String[][]{{"",""}};
@@ -101,9 +114,14 @@ public class MainActivity extends Activity {
         @Override
         public void onClick(View view) {
             Log.d(TAG, "onClick");
-            switch (view.getId()){
+            switch (view.getId()) {
                 case R.id.buttonAddRow:
-                    addFieldSet(new String[]{"",""});
+                    Log.d(TAG, "new field set");
+                    addFieldSet(new String[]{"", ""});
+                    break;
+                case R.id.buttonAddFilterRow:
+                    Log.d(TAG, "new filter");
+                    addFilterSet(new String[]{"", ""});
                     break;
                 case R.id.buttonDeleteRow:
                     Log.d(TAG, "delete pressed");
@@ -118,11 +136,18 @@ public class MainActivity extends Activity {
                     Toast.makeText(
                             getApplicationContext(),
                             "AltRoute " + (
-                                    checked?
+                                    checked ?
                                             "Enabled" :
                                             "Disabled"),
                             Toast.LENGTH_LONG)
                             .show();
+                    break;
+                default:
+                    if (view.getId() == buttonIdFilterLineDelete) {
+                        Log.d(TAG, "delete filter pressed");
+                        v = (LinearLayout) view.getParent();
+                        fieldParentFilters.removeView(v);
+                    }
             }
         }
     };
@@ -138,12 +163,18 @@ public class MainActivity extends Activity {
         switch (item.getItemId()) {
             case R.id.menu_save:
                 saveBridgeData(captureBridgeDataFromView());
+                saveFilterData(captureFilterDataFromView());
                 Toast.makeText(getApplicationContext(), "Data Saved!", Toast.LENGTH_LONG).show();
                 return true;
             case R.id.menu_reset:
+                String[][] emptySet2D = new String[][]{{"",""}};
+                String[] emptySet = new String[]{"",""};
                 fieldParent.removeAllViews();
-                saveBridgeData(new String[][]{{"",""}});
-                addFieldSet(new String[]{"",""});
+                saveBridgeData(emptySet2D);
+                addFieldSet(emptySet);
+                fieldParentFilters.removeAllViews();
+                addFilterSet(emptySet);
+                saveFilterData(emptySet2D);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -166,6 +197,21 @@ public class MainActivity extends Activity {
                     Toast.makeText(getApplicationContext(), "Data Saved!", Toast.LENGTH_LONG).show();
                 }
         }
+
+        String[][] c = captureFilterDataFromView();
+        String[][] d = getSavedFilterData();
+        if(c.length != d.length){
+            saveFilterData(c);
+            Toast.makeText(getApplicationContext(), "Filter Data Saved!", Toast.LENGTH_LONG).show();
+        }
+        else
+            for (int i = 0; i < c.length; i++) {
+                if (!Arrays.equals(c[i], d[i])){
+                    saveFilterData(c);
+                    Toast.makeText(getApplicationContext(), "Filter Data Saved!", Toast.LENGTH_LONG).show();
+                }
+            }
+
         super.onBackPressed();
     }
 
@@ -188,6 +234,29 @@ public class MainActivity extends Activity {
             View viewBridgeSetHolder = fieldParent.getChildAt(i);
             EditText numBox = (EditText) viewBridgeSetHolder.findViewById(R.id.editTextNumber);
             EditText delBox = (EditText) viewBridgeSetHolder.findViewById(R.id.editTextDelay);
+
+            String[] lineData = new String[2];
+            lineData[0] = numBox.getText().toString();
+            if (lineData[0].length() > 0) {
+                lineData[1] = delBox.getText().toString();
+                setList.add(i, lineData);
+            }
+        }
+
+        String[][] setArray = new String[setList.size()][2];
+        for(int i=0; i<setList.size();i++)
+            setArray[i] = setList.get(i);
+
+        return setArray;
+    }
+
+    public String[][] captureFilterDataFromView() {
+        Log.d(TAG, "Read Data from user");
+        List<String[]> setList = new ArrayList<String[]>();
+        for(int i=0; i < fieldParentFilters.getChildCount();i++){
+            LinearLayout viewBridgeSetHolder = (LinearLayout) fieldParentFilters.getChildAt(i);
+            EditText numBox = (EditText) viewBridgeSetHolder.getChildAt(0);
+            EditText delBox = (EditText) viewBridgeSetHolder.getChildAt(1);
 
             String[] lineData = new String[2];
             lineData[0] = numBox.getText().toString();
@@ -230,18 +299,71 @@ public class MainActivity extends Activity {
         delayBox.setText(aSet[1]);
     }
 
+    private void addFilterSet(String[] aSet){
+        Log.d(TAG, "Insert a filter line" + String.valueOf(aSet.length));
+
+        LinearLayout.LayoutParams setParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        setParams.setLayoutDirection(LinearLayout.HORIZONTAL);
+        LinearLayout fieldSet = new LinearLayout(this);
+        fieldParentFilters.addView(fieldSet,fieldParentFilters.getChildCount(),setParams);
+
+        int displayWidth = getWindowManager().getDefaultDisplay().getWidth();
+        EditText countryCode = new EditText(this);
+        countryCode.setHint("Country Code");
+        LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams((displayWidth * 45)/100, LinearLayout.LayoutParams.WRAP_CONTENT);
+        fieldSet.addView(countryCode,0,numberParams);
+
+        EditText convertTo = new EditText(this);
+        convertTo.setHint("Convert to");
+        LinearLayout.LayoutParams delayParams = new LinearLayout.LayoutParams((displayWidth * 45)/100, LinearLayout.LayoutParams.WRAP_CONTENT);
+        fieldSet.addView(convertTo,1,delayParams);
+
+        ImageButton buttonDeleteSet = new ImageButton(this);
+        buttonDeleteSet.setBackground(ContextCompat.getDrawable(this, android.R.drawable.ic_delete));
+        buttonDeleteSet.setId(buttonIdFilterLineDelete);
+        Log.d(TAG,String.valueOf(buttonDeleteSet.getId()));
+        buttonDeleteSet.setOnClickListener(listener);
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        fieldSet.addView(buttonDeleteSet,2,buttonParams);
+
+        countryCode.setText(aSet[0]);
+        convertTo.setText(aSet[1]);
+    }
+
     private boolean getSavedReceiverState() {
         Log.d(TAG,"Read Receiver state");
         return sharedPref.getBoolean(SHARED_PREF_KEY_RECEIVER_STATE, false);
     }
 
-    private String[][] getSavedBridgeData(){
-        Log.d(TAG, "Read saved data");
-        String a = sharedPref.getString(SHARED_PREF_KEY_BRIDGES, "");
+    private String[][] getSavedFilterData() {
+        Log.d(TAG, "Read saved filter data");
+        String a = sharedPref.getString(SHARED_PREF_KEY_FILTER_SETS, "");
         String[] pairs = StringUtils.split(a,":");
         String[][] set = new String[pairs.length][2];
-        for(int i=0;i<pairs.length;i++)
-            set[i] = StringUtils.split(pairs[i],"~");
+        for(int i=0;i<pairs.length;i++) {
+            String[] filterPair = StringUtils.split(pairs[i],"~");;
+            set[i][0] = filterPair[0];
+            if (filterPair.length > 1)
+                set[i][1] = filterPair[1];
+            else
+                set[i][1] = "";
+        }
+        return set;
+    }
+
+    private String[][] getSavedBridgeData(){
+        Log.d(TAG, "Read saved route data");
+        String a = sharedPref.getString(SHARED_PREF_KEY_BRIDGE_SETS, "");
+        String[] pairs = StringUtils.split(a,":");
+        String[][] set = new String[pairs.length][2];
+        for(int i=0;i<pairs.length;i++) {
+            String[] bridgePair = StringUtils.split(pairs[i],"~");;
+            set[i][0] = bridgePair[0];
+            if (bridgePair.length > 1)
+                set[i][1] = bridgePair[1];
+            else
+                set[i][1] = "";
+        }
         return set;
     }
 
@@ -253,7 +375,7 @@ public class MainActivity extends Activity {
     }
 
     private void saveBridgeData(String[][] set){
-        Log.d(TAG, "Write user data");
+        Log.d(TAG, "Write route data");
 
         String[] pairs = new String[set.length];
         for(int i=0;i<set.length;i++){
@@ -261,7 +383,20 @@ public class MainActivity extends Activity {
         }
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(SHARED_PREF_KEY_BRIDGES, StringUtils.join(pairs, ':'));
+        editor.putString(SHARED_PREF_KEY_BRIDGE_SETS, StringUtils.join(pairs, ':'));
+        editor.apply();
+    }
+
+    private void saveFilterData(String[][] set){
+        Log.d(TAG, "Write route data");
+
+        String[] pairs = new String[set.length];
+        for(int i=0;i<set.length;i++){
+            pairs[i] = StringUtils.join(set[i],'~');
+        }
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(SHARED_PREF_KEY_FILTER_SETS, StringUtils.join(pairs, ':'));
         editor.apply();
     }
 }
