@@ -21,13 +21,11 @@ import java.util.Date;
 
 public class CatchOutgoingCall extends BroadcastReceiver {
 	private static final String TAG_BRD_REC = "OutgoingCallReceiver";
-	private Context context;
 	SharedPreferences sharedPref;
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Date callBroadcastTime = new Date();
-		this.context = context;
 		Bundle extras = intent.getExtras();
 		String extrasData = "";
 		for(String key : extras.keySet()) extrasData = extrasData.concat(" " + key + ": " + extras.getString(key));
@@ -91,7 +89,7 @@ public class CatchOutgoingCall extends BroadcastReceiver {
 				(contactName.length() > 0 && contactType.length() > 0 ?
 						contactName + " " + (contactType.equals("OTHER") && contactLabel != null ? contactLabel : contactType) + " "
 						:"") +
-				orgNum + "\nusing JumpCall", Toast.LENGTH_LONG).show();
+				orgNum + "\nusing " + context.getString(R.string.app_name), Toast.LENGTH_LONG).show();
 	}
 
 	private String numSeqBuild(String[][] set, String dialedNum){

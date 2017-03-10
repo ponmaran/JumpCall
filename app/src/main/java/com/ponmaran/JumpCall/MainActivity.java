@@ -102,7 +102,6 @@ public class MainActivity extends Activity {
                             public void onClick(DialogInterface dialogInterface, int i) {
                             }
                         })
-//                        .create()
                         .show();
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{permission}, request);
@@ -185,34 +184,49 @@ public class MainActivity extends Activity {
         Log.d(TAG, "onBackPressed");
         String[][] a = captureBridgeDataFromView();
         String[][] b = getSavedBridgeData();
-
-        if(a.length != b.length){
-            saveBridgeData(a);
-            Toast.makeText(getApplicationContext(), "Data Saved!", Toast.LENGTH_LONG).show();
-        }
-        else
-            for (int i = 0; i < a.length; i++) {
-                if (!Arrays.equals(a[i], b[i])){
-                    saveBridgeData(a);
-                    Toast.makeText(getApplicationContext(), "Data Saved!", Toast.LENGTH_LONG).show();
-                }
-        }
-
         String[][] c = captureFilterDataFromView();
         String[][] d = getSavedFilterData();
-        if(c.length != d.length){
-            saveFilterData(c);
-            Toast.makeText(getApplicationContext(), "Filter Data Saved!", Toast.LENGTH_LONG).show();
-        }
-        else
-            for (int i = 0; i < c.length; i++) {
-                if (!Arrays.equals(c[i], d[i])){
-                    saveFilterData(c);
-                    Toast.makeText(getApplicationContext(), "Filter Data Saved!", Toast.LENGTH_LONG).show();
+
+        if(a.length != b.length || c.length != d.length){
+            changeAlert(a,c);
+            return;
+        } else {
+            for (int i = 0; i < a.length; i++) {
+                if (!Arrays.equals(a[i], b[i])) {
+                    changeAlert(a, c);
+                    return;
                 }
             }
+            for (int i = 0; i < c.length; i++) {
+                if (!Arrays.equals(c[i], d[i])){
+                    changeAlert(a, c);
+                    return;
+                }
+            }
+        }
 
         super.onBackPressed();
+    }
+
+    private void changeAlert(final String[][] a, final String[][] c) {
+        new AlertDialog.Builder(this)
+                .setMessage("Save Changes?")
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        saveBridgeData(a);
+                        saveFilterData(c);
+                        Toast.makeText(getApplicationContext(), "Data Saved!", Toast.LENGTH_LONG).show();
+                        MainActivity.super.onBackPressed();
+                    }
+                })
+                .setNegativeButton("Discard", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MainActivity.super.onBackPressed();
+                    }
+                })
+                .show();
     }
 
     private void setReceiverState(boolean checked) {
@@ -300,7 +314,7 @@ public class MainActivity extends Activity {
     }
 
     private void addFilterSet(String[] aSet){
-        Log.d(TAG, "Insert a filter line" + String.valueOf(aSet.length));
+        Log.d(TAG, "Insert a filter line");
 
         LinearLayout.LayoutParams setParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         setParams.setLayoutDirection(LinearLayout.HORIZONTAL);
@@ -321,7 +335,6 @@ public class MainActivity extends Activity {
         ImageButton buttonDeleteSet = new ImageButton(this);
         buttonDeleteSet.setBackground(ContextCompat.getDrawable(this, android.R.drawable.ic_delete));
         buttonDeleteSet.setId(buttonIdFilterLineDelete);
-        Log.d(TAG,String.valueOf(buttonDeleteSet.getId()));
         buttonDeleteSet.setOnClickListener(listener);
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         fieldSet.addView(buttonDeleteSet,2,buttonParams);
