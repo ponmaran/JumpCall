@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     static final String SHARED_PREF_KEY_FILTER_SETS = "FILTER_SETS";
 
     static final String SHARED_PREF_KEY_RECEIVER_STATE = "RECEIVER_STATE";
+    static final String SHARED_PREF_KEY_FIRST_RUN = "FIRST_RUN";
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 7;
     private static final int MY_PERMISSIONS_REQUEST_CALL_PHONE = 14;
 
@@ -49,7 +50,12 @@ public class MainActivity extends Activity {
 	@Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
-        
+
+        sharedPref = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
+
+        //Initial setup
+        if(sharedPref.getBoolean(SHARED_PREF_KEY_FIRST_RUN,true)) freshStart();
+
         if (Build.VERSION.SDK_INT >= 23){
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED)
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, MY_PERMISSIONS_REQUEST_CALL_PHONE);
@@ -72,8 +78,6 @@ public class MainActivity extends Activity {
         Switch aSwitch = (Switch) findViewById(R.id.switchReceiverOnOff);
         aSwitch.setOnClickListener(listener);
 
-        sharedPref = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
-
         boolean receiverState = getSavedReceiverState();
         setReceiverState(receiverState);
         aSwitch.setChecked(receiverState);
@@ -87,6 +91,16 @@ public class MainActivity extends Activity {
         if(set.length == 0) set = new String[][]{{"",""}};
         for (String[] aSet : set)
             addFieldSet(aSet);
+    }
+
+    private void freshStart() {
+        Log.d(TAG,"First Run");
+        saveReceiverState(true);
+        setReceiverState(true);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(SHARED_PREF_KEY_FIRST_RUN, false);
+        editor.apply();
+
     }
 
     @Override public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull int[] grantResults) {
