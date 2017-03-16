@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -47,12 +49,14 @@ public class MainActivity extends Activity {
 	@Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
-        checkPermission(Manifest.permission.READ_CONTACTS,
-                getString(R.string.app_name) + " " + getString(R.string.permissionRequestMessageReadContacts) + "\n\n" + getString(R.string.permissionRequestReadContactsIfDenied),
-                MY_PERMISSIONS_REQUEST_READ_CONTACTS);
-        checkPermission(Manifest.permission.CALL_PHONE,
-                getString(R.string.app_name) + " " + getString(R.string.permissionRequestMessageCallPhone) + "\n\n" + getString(R.string.permissionRequestCallPhoneIfDenied),
-                MY_PERMISSIONS_REQUEST_CALL_PHONE);
+        
+        if (Build.VERSION.SDK_INT >= 23){
+            if(ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED)
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, MY_PERMISSIONS_REQUEST_CALL_PHONE);
+            if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+        }
+
         setContentView(R.layout.activity_main);
 
         fieldParent = (LinearLayout) findViewById(R.id.field_parent);
@@ -85,28 +89,57 @@ public class MainActivity extends Activity {
             addFieldSet(aSet);
     }
 
-    private void checkPermission(final String permission, String message, final int request){
-        Log.d(TAG,"Checking Permission");
-        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
-                new AlertDialog.Builder(this)
-                        .setMessage(message)
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, request);
-                            }
-                        })
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                            }
-                        })
-                        .show();
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{permission}, request);
-            }
+    @Override public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult");
+        Log.d(TAG, StringUtils.join(permissions,'~') + StringUtils.join(grantResults,';'));
+        switch (requestCode){
+            case MY_PERMISSIONS_REQUEST_CALL_PHONE:
+                if (grantResults[0] != 0)
+                    new AlertDialog.Builder(this)
+                            .setMessage( getString(R.string.app_name) +
+                                    " " +
+                                    getString(R.string.permissionRequestMessageCallPhone)
+                                    + "\n\n"
+                                    + getString(R.string.permissionRequestCallPhoneIfDenied))
+                            .setPositiveButton("RE-TRY", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    ActivityCompat.requestPermissions(MainActivity.this, permissions, requestCode);
+                                }
+                            })
+                            .setNegativeButton("EXIT", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    finish();
+                                }
+                            })
+                            .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                                @Override
+                                public void onCancel(DialogInterface dialogInterface) {
+                                    finish();
+                                }
+                            })
+                            .show();
+                break;
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS:
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[0]) && grantResults[0] != 0){
+                    new AlertDialog.Builder(this)
+                            .setMessage(
+                                    getString(R.string.app_name)
+                                            + " "
+                                            + getString(R.string.permissionRequestMessageReadContacts)
+                                            + "\n\n"
+                                            + getString(R.string.permissionRequestReadContactsIfDenied))
+                            .setPositiveButton("RE-TRY", new DialogInterface.OnClickListener() {
+                                @Override public void onClick(DialogInterface dialogInterface, int i) {
+                                    ActivityCompat.requestPermissions(MainActivity.this, permissions, requestCode);
+                                }
+                            }).setNegativeButton("I'M FINE", null)
+                            .show();
+                }
+                break;
         }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     private View.OnClickListener listener = new View.OnClickListener() {
@@ -134,7 +167,7 @@ public class MainActivity extends Activity {
                     saveReceiverState(checked);
                     Toast.makeText(
                             getApplicationContext(),
-                            "AltRoute " + (
+                            getString(R.string.app_name) + " " + (
                                     checked ?
                                             "Enabled" :
                                             "Disabled"),
