@@ -45,7 +45,6 @@ public class MainActivity extends Activity {
 
     private LinearLayout fieldParent;
     private LinearLayout fieldParentFilters;
-    private int buttonIdFilterLineDelete;
 
 	@Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,7 +66,6 @@ public class MainActivity extends Activity {
 
         fieldParent = (LinearLayout) findViewById(R.id.field_parent);
         fieldParentFilters = (LinearLayout) findViewById(R.id.field_parent_filters);
-        buttonIdFilterLineDelete = ImageButton.generateViewId();
 
         ImageButton buttonPlus = (ImageButton) findViewById(R.id.buttonAddRow);
         buttonPlus.setOnClickListener(listener);
@@ -105,7 +103,6 @@ public class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult");
-        Log.d(TAG, StringUtils.join(permissions,'~') + StringUtils.join(grantResults,';'));
         switch (requestCode){
             case MY_PERMISSIONS_REQUEST_CALL_PHONE:
                 if (grantResults[0] != 0)
@@ -169,11 +166,18 @@ public class MainActivity extends Activity {
                     Log.d(TAG, "new filter");
                     addFilterSet(new String[]{"", ""});
                     break;
-                case R.id.buttonDeleteRow:
-                    Log.d(TAG, "delete pressed");
-                    LinearLayout v = (LinearLayout) view.getParent();
-                    fieldParent.removeView(v);
+                case R.id.buttonDeleteNumberRow:
+                    Log.d(TAG, "delete Number pressed");
+                    LinearLayout fieldSetNumber = (LinearLayout) view.getParent();
+                    fieldParent.removeView(fieldSetNumber);
+                    if (fieldParent.getChildCount() == 0) addFieldSet(new String[]{"", ""});
                     break;
+                case R.id.buttonDeleteCountryCode:
+                    Log.d(TAG, "delete Country pressed");
+                    LinearLayout fieldSetCountry = (LinearLayout) view.getParent();
+                    fieldParentFilters.removeView(fieldSetCountry);
+                    if (fieldParentFilters.getChildCount() == 0) addFilterSet(new String[]{"", ""});
+                        break;
                 case R.id.switchReceiverOnOff:
                     Switch aSwitch = (Switch) view;
                     boolean checked = aSwitch.isChecked();
@@ -188,12 +192,6 @@ public class MainActivity extends Activity {
                             Toast.LENGTH_LONG)
                             .show();
                     break;
-                default:
-                    if (view.getId() == buttonIdFilterLineDelete) {
-                        Log.d(TAG, "delete filter pressed");
-                        v = (LinearLayout) view.getParent();
-                        fieldParentFilters.removeView(v);
-                    }
             }
         }
     };
@@ -335,25 +333,14 @@ public class MainActivity extends Activity {
     }
 
     private void addFieldSet(String[] aSet){
-        Log.d(TAG, "Insert a line");
+        Log.d(TAG, "Insert a Number line");
         LinearLayout fieldSet = (LinearLayout) LayoutInflater.from(fieldParent.getContext()).inflate(R.layout.number_delay_set,fieldParent,false);
-        LinearLayout.LayoutParams setParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        setParams.weight = 10f;
-        setParams.setLayoutDirection(LinearLayout.HORIZONTAL);
-        fieldParent.addView(fieldSet,fieldParent.getChildCount(),setParams);
+        fieldParent.addView(fieldSet,fieldParent.getChildCount());
 
-        int displayWidth = getWindowManager().getDefaultDisplay().getWidth();
         EditText numberBox = (EditText) fieldSet.findViewById(R.id.editTextNumber);
-        LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams((displayWidth * 6)/10, LinearLayout.LayoutParams.WRAP_CONTENT);
-        numberBox.setLayoutParams(numberParams);
-
+        if(fieldParent.getChildCount() == 1) numberBox.setHint(R.string.connectionNumber);
         EditText delayBox = (EditText) fieldSet.findViewById(R.id.editTextDelay);
-        LinearLayout.LayoutParams delayParams = new LinearLayout.LayoutParams((displayWidth * 3)/10, LinearLayout.LayoutParams.WRAP_CONTENT);
-        delayBox.setLayoutParams(delayParams);
-
-        ImageButton buttonDeleteSet = (ImageButton) fieldSet.findViewById(R.id.buttonDeleteRow);
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        buttonDeleteSet.setLayoutParams(buttonParams);
+        ImageButton buttonDeleteSet = (ImageButton) fieldSet.findViewById(R.id.buttonDeleteNumberRow);
         buttonDeleteSet.setOnClickListener(listener);
 
         numberBox.setText(aSet[0]);
@@ -361,30 +348,15 @@ public class MainActivity extends Activity {
     }
 
     private void addFilterSet(String[] aSet){
-        Log.d(TAG, "Insert a filter line");
+        Log.d(TAG, "Insert a Country code line");
 
-        LinearLayout.LayoutParams setParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        setParams.setLayoutDirection(LinearLayout.HORIZONTAL);
-        LinearLayout fieldSet = new LinearLayout(this);
-        fieldParentFilters.addView(fieldSet,fieldParentFilters.getChildCount(),setParams);
+        LinearLayout fieldSet = (LinearLayout) LayoutInflater.from(fieldParent.getContext()).inflate(R.layout.country_code_set,fieldParent,false);
+        fieldParentFilters.addView(fieldSet,fieldParentFilters.getChildCount());
 
-        int displayWidth = getWindowManager().getDefaultDisplay().getWidth();
-        EditText countryCode = new EditText(this);
-        countryCode.setHint("Country Code");
-        LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams((displayWidth * 45)/100, LinearLayout.LayoutParams.WRAP_CONTENT);
-        fieldSet.addView(countryCode,0,numberParams);
-
-        EditText convertTo = new EditText(this);
-        convertTo.setHint("Convert to");
-        LinearLayout.LayoutParams delayParams = new LinearLayout.LayoutParams((displayWidth * 45)/100, LinearLayout.LayoutParams.WRAP_CONTENT);
-        fieldSet.addView(convertTo,1,delayParams);
-
-        ImageButton buttonDeleteSet = new ImageButton(this);
-        buttonDeleteSet.setBackground(ContextCompat.getDrawable(this, android.R.drawable.ic_delete));
-        buttonDeleteSet.setId(buttonIdFilterLineDelete);
+        EditText countryCode = (EditText) fieldSet.findViewById(R.id.editTextCountryCode);
+        EditText convertTo = (EditText) fieldSet.findViewById(R.id.editTextDialAs);
+        ImageButton buttonDeleteSet = (ImageButton) fieldSet.findViewById(R.id.buttonDeleteCountryCode);
         buttonDeleteSet.setOnClickListener(listener);
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        fieldSet.addView(buttonDeleteSet,2,buttonParams);
 
         countryCode.setText(aSet[0]);
         convertTo.setText(aSet[1]);

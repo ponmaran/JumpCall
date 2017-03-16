@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/fieldSet"
+    android:id="@+id/filterSet"
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:weightSum="10">
 
-    <EditText xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/editTextNumber"
+    <EditText android:id="@+id/editTextCountryCode"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="6"
-        android:hint="@string/edit_num_hint"
+        android:hint="@string/editTextHintCountryCode"
         android:inputType="phone" >
     </EditText>
 
-    <EditText xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/editTextDelay"
+    <EditText android:id="@+id/editTextDialAs"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="4"
-        android:hint="@string/edit_delay_hint"
-        android:inputType="number"
-        android:maxLength="2" >
+        android:hint="@string/editTextHintDialAs"
+        android:inputType="number" >
     </EditText>
 
-    <ImageButton
-        android:id="@+id/buttonDeleteNumberRow"
+    <ImageButton android:id="@+id/buttonDeleteCountryCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/desc_delete_row"
