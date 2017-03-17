@@ -7,4 +7,8 @@
         android:title="@string/menu_reset"
         android:orderInCategory="200" >
     </item>
+    <item android:id="@+id/menu_guide"
+        android:title="@string/menu_guide"
+        android:orderInCategory="200" >
+    </item>
 </menu>

@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -99,6 +100,7 @@ public class MainActivity extends Activity {
         editor.putBoolean(SHARED_PREF_KEY_FIRST_RUN, false);
         editor.apply();
 
+        startActivity(new Intent(this, GuideActivity.class));
     }
 
     @Override public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull int[] grantResults) {
@@ -219,6 +221,9 @@ public class MainActivity extends Activity {
                 fieldParentFilters.removeAllViews();
                 addFilterSet(emptySet);
                 saveFilterData(emptySet2D);
+                return true;
+            case R.id.menu_guide:
+                startActivity(new Intent(this, GuideActivity.class));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
