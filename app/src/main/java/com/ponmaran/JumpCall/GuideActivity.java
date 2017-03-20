@@ -5,6 +5,7 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 
@@ -53,11 +54,11 @@ public class GuideActivity extends Activity {
                 case R.id.button_next:
                     switch (imageIndex){
                         case 0:
-                            mContentView.setBackground(getDrawable(R.drawable.guide_page_2));
+                            mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this,R.drawable.guide_page_2));
                             imageIndex++;
                             break;
                         case 1:
-                            mContentView.setBackground(getDrawable(R.drawable.guide_page_3));
+                            mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this,R.drawable.guide_page_3));
                             buttonNext.setText(R.string.guide_button_done);
                             imageIndex++;
                             break;
@@ -68,11 +69,11 @@ public class GuideActivity extends Activity {
                 case R.id.button_prev:
                     switch (imageIndex){
                         case 1:
-                            mContentView.setBackground(getDrawable(R.drawable.guide_page_1));
+                            mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this, R.drawable.guide_page_1));
                             imageIndex--;
                             break;
                         case 2:
-                            mContentView.setBackground(getDrawable(R.drawable.guide_page_2));
+                            mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this, R.drawable.guide_page_2));
                             buttonNext.setText(getText(R.string.guide_button_next));
                             imageIndex--;
                             break;
