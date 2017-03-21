@@ -1,6 +1,6 @@
 <resources>
 
-    <string name="app_name">BY-PASS</string>
+    <string name="app_name">ByPass</string>
 
     <string name="menu_save">Save</string>
     <string name="menu_reset">Reset</string>
@@ -18,9 +18,9 @@
     <string name="editTextHintDialAs">Dial as</string>
 
     <string name="permissionRequestMessageReadContacts"> shows Contacts info of the destination number in routing message from phone Contacts.</string>
-    <string name="permissionRequestMessageCallPhone"> requires this permission to place a call via configured routing number.</string>
+    <string name="permissionRequestMessageCallPhone"> requires permission to place a call via configured routing number.</string>
     <string name="permissionRequestReadContactsIfDenied">If denied, routing notification will not show contact info.</string>
-    <string name="permissionRequestCallPhoneIfDenied">If denied, app will not work as intended.\n\nExit app?</string>
+    <string name="permissionRequestCallPhoneIfDenied">If denied, app will not work.</string>
 
     <string name="title_activity_guide">GuideActivity</string>
     <string name="guide_button_skip">SKIP</string>

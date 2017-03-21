@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -39,8 +40,7 @@ public class MainActivity extends Activity {
 
     static final String SHARED_PREF_KEY_RECEIVER_STATE = "RECEIVER_STATE";
     static final String SHARED_PREF_KEY_FIRST_RUN = "FIRST_RUN";
-    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 7;
-    private static final int MY_PERMISSIONS_REQUEST_CALL_PHONE = 14;
+    private static final int PERMISSIONS_REQUEST_ALL = 0;
 
     private SharedPreferences sharedPref;
 
@@ -57,10 +57,16 @@ public class MainActivity extends Activity {
         if(sharedPref.getBoolean(SHARED_PREF_KEY_FIRST_RUN,true)) freshStart();
 
         if (Build.VERSION.SDK_INT >= 23){
+            List<String> permissionsList = new ArrayList<>();
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED)
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, MY_PERMISSIONS_REQUEST_CALL_PHONE);
+                permissionsList.add(Manifest.permission.CALL_PHONE);
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+                permissionsList.add(Manifest.permission.READ_CONTACTS);
+            String[] permissions = new String[permissionsList.size()];
+            for (int i=0;i < permissionsList.size();i++)
+                permissions[i] = permissionsList.get(i);
+            if(permissionsList.size()>0)
+                ActivityCompat.requestPermissions(this, permissions, PERMISSIONS_REQUEST_ALL);
         }
 
         setContentView(R.layout.activity_main);
@@ -103,54 +109,55 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, GuideActivity.class));
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult");
-        switch (requestCode){
-            case MY_PERMISSIONS_REQUEST_CALL_PHONE:
-                if (grantResults[0] != 0)
-                    new AlertDialog.Builder(this)
-                            .setMessage( getString(R.string.app_name) +
-                                    " " +
-                                    getString(R.string.permissionRequestMessageCallPhone)
-                                    + "\n\n"
-                                    + getString(R.string.permissionRequestCallPhoneIfDenied))
-                            .setPositiveButton("RE-TRY", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    ActivityCompat.requestPermissions(MainActivity.this, permissions, requestCode);
-                                }
-                            })
-                            .setNegativeButton("EXIT", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    finish();
-                                }
-                            })
-                            .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                                @Override
-                                public void onCancel(DialogInterface dialogInterface) {
-                                    finish();
-                                }
-                            })
-                            .show();
-                break;
-            case MY_PERMISSIONS_REQUEST_READ_CONTACTS:
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[0]) && grantResults[0] != 0){
-                    new AlertDialog.Builder(this)
-                            .setMessage(
-                                    getString(R.string.app_name)
-                                            + " "
-                                            + getString(R.string.permissionRequestMessageReadContacts)
-                                            + "\n\n"
-                                            + getString(R.string.permissionRequestReadContactsIfDenied))
-                            .setPositiveButton("RE-TRY", new DialogInterface.OnClickListener() {
-                                @Override public void onClick(DialogInterface dialogInterface, int i) {
-                                    ActivityCompat.requestPermissions(MainActivity.this, permissions, requestCode);
-                                }
-                            }).setNegativeButton("I'M FINE", null)
-                            .show();
-                }
-                break;
+        for (int x=0;x < permissions.length;x++) {
+            if (permissions[x].equals(Manifest.permission.CALL_PHONE) && grantResults[x] != PackageManager.PERMISSION_GRANTED) {
+                final String[] perms = new String[]{permissions[x]};
+                new AlertDialog.Builder(this)
+                        .setMessage(getString(R.string.app_name) +
+                                " " +
+                                getString(R.string.permissionRequestMessageCallPhone)
+                                + "\n\n"
+                                + getString(R.string.permissionRequestCallPhoneIfDenied))
+                        .setPositiveButton("Re-Try", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                ActivityCompat.requestPermissions(MainActivity.this, perms, requestCode);
+                            }
+                        })
+                        .setNegativeButton("Exit " + getString(R.string.app_name), new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                finish();
+                            }
+                        })
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialogInterface) {
+                                finish();
+                            }
+                        })
+                        .show();
+            }
+            if (permissions[x].equals(Manifest.permission.READ_CONTACTS) && shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)){
+                final String[] perms = new String[]{permissions[x]};
+                new AlertDialog.Builder(this)
+                        .setMessage(
+                                getString(R.string.app_name)
+                                        + " "
+                                        + getString(R.string.permissionRequestMessageReadContacts)
+                                        + "\n\n"
+                                        + getString(R.string.permissionRequestReadContactsIfDenied))
+                        .setPositiveButton("Re-Try", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                ActivityCompat.requestPermissions(MainActivity.this, perms, requestCode);
+                            }
+                        }).setNegativeButton("I'm Fine", null)
+                        .show();
+            }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
@@ -378,7 +385,7 @@ public class MainActivity extends Activity {
         String[] pairs = StringUtils.split(a,":");
         String[][] set = new String[pairs.length][2];
         for(int i=0;i<pairs.length;i++) {
-            String[] filterPair = StringUtils.split(pairs[i],"~");;
+            String[] filterPair = StringUtils.split(pairs[i],"~");
             set[i][0] = filterPair[0];
             if (filterPair.length > 1)
                 set[i][1] = filterPair[1];
@@ -394,7 +401,7 @@ public class MainActivity extends Activity {
         String[] pairs = StringUtils.split(a,":");
         String[][] set = new String[pairs.length][2];
         for(int i=0;i<pairs.length;i++) {
-            String[] bridgePair = StringUtils.split(pairs[i],"~");;
+            String[] bridgePair = StringUtils.split(pairs[i],"~");
             set[i][0] = bridgePair[0];
             if (bridgePair.length > 1)
                 set[i][1] = bridgePair[1];
@@ -414,26 +421,28 @@ public class MainActivity extends Activity {
     private void saveBridgeData(String[][] set){
         Log.d(TAG, "Write route data");
 
-        String[] pairs = new String[set.length];
-        for(int i=0;i<set.length;i++){
-            pairs[i] = StringUtils.join(set[i],'~');
+        List<String> pairs = new ArrayList<>();
+        for(String aSet[] : set){
+            if(aSet.length > 0 && !aSet[0].isEmpty())
+                pairs.add(StringUtils.join(aSet,'~'));
         }
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(SHARED_PREF_KEY_BRIDGE_SETS, StringUtils.join(pairs, ':'));
+        editor.putString(SHARED_PREF_KEY_BRIDGE_SETS, StringUtils.join(pairs.toArray(), ':'));
         editor.apply();
     }
 
     private void saveFilterData(String[][] set){
         Log.d(TAG, "Write route data");
 
-        String[] pairs = new String[set.length];
-        for(int i=0;i<set.length;i++){
-            pairs[i] = StringUtils.join(set[i],'~');
+        List<String> pairs = new ArrayList<>();
+        for(String aSet[] : set){
+            if(aSet.length > 0 && !aSet[0].isEmpty())
+                pairs.add(StringUtils.join(aSet,'~'));
         }
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(SHARED_PREF_KEY_FILTER_SETS, StringUtils.join(pairs, ':'));
+        editor.putString(SHARED_PREF_KEY_FILTER_SETS, StringUtils.join(pairs.toArray(), ':'));
         editor.apply();
     }
 }

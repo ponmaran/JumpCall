@@ -3,6 +3,7 @@ package com.ponmaran.JumpCall;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
@@ -43,6 +44,7 @@ public class GuideActivity extends Activity {
         buttonNext.setOnClickListener(listener);
         buttonPrev = (Button) findViewById(R.id.button_prev);
         buttonPrev.setOnClickListener(listener);
+        buttonPrev.setTextColor(Color.GRAY);
         buttonSkip = (Button) findViewById(R.id.button_skip);
         buttonSkip.setOnClickListener(listener);
     }
@@ -55,6 +57,7 @@ public class GuideActivity extends Activity {
                     switch (imageIndex){
                         case 0:
                             mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this,R.drawable.guide_page_2));
+                            buttonPrev.setTextColor(Color.BLACK);
                             imageIndex++;
                             break;
                         case 1:
@@ -70,11 +73,13 @@ public class GuideActivity extends Activity {
                     switch (imageIndex){
                         case 1:
                             mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this, R.drawable.guide_page_1));
+                            buttonPrev.setTextColor(Color.GRAY);
                             imageIndex--;
                             break;
                         case 2:
                             mContentView.setBackground(ContextCompat.getDrawable(GuideActivity.this, R.drawable.guide_page_2));
                             buttonNext.setText(getText(R.string.guide_button_next));
+                            buttonPrev.setTextColor(Color.BLACK);
                             imageIndex--;
                             break;
                     }
